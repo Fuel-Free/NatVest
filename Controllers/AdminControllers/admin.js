@@ -181,23 +181,19 @@ const forgotPassword = async (req, res) => {
   
   
   const changePassword = async (req, res) => {
-      const { oldPassword, newPassword, confirmPassword } = req.body;
-      const { id } = req.params;
-      const Admin = await AdminSchema.findById(id);
-      console.log('0');
-      console.log(Admin, 'admindata ');
-      try {
-          const isMatch = await bcrypt.compare(oldPassword, Admin.Password);
-          if (isMatch) {
-          console.log('1');
-          if(oldPassword !== newPassword) {
-              if (newPassword !== confirmPassword) {
-                  res.status(401).json({
-                      STATUS: "FAILED",
-                      message: "Your Passowrd Does Not Match. Enter New Password Again Here.",
-                    });
-                } else {
-              console.log('2');
+    const { oldPassword, newPassword, confirmPassword } = req.body;
+    const { id } = req.params;
+    const Admin = await AdminSchema.findById(id);
+    try {
+      const isMatch = await bcrypt.compare(oldPassword, Admin.Password);
+      if (isMatch) {
+        if(oldPassword !== newPassword) {
+          if (newPassword !== confirmPassword) {
+            res.status(401).json({
+              STATUS: "FAILED",
+              message: "Your Passowrd Does Not Match. Enter New Password Again Here.",
+            });
+          } else {
             const salt = await bcrypt.genSalt(10);
             const new_Password = await bcrypt.hash(newPassword, salt);
             const createPassword = await AdminSchema.findByIdAndUpdate(Admin.id, {
@@ -209,26 +205,22 @@ const forgotPassword = async (req, res) => {
             });
           }
         } else {
-            console.log('3');
           res.status(400).send({
             status: "failed",
             message: "New Password Must Be Different From Current Password",
           })
         }
       } else {
-          console.log('4');
         res.status(400).send({
           status: "failed",
           error: "Your Old Password Was Entered Incorrectly. Please Enter It Again."
         })
       }
     } catch (error) {
-        console.log('error');
-    //   res.status(400).json({
-
-        // success: "Error",
-        // error: error.message[0],
-    //   })
+      res.status(400).json({
+        success: "Error",
+        error: error.message,
+      })
     }
   }
 

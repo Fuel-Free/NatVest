@@ -7,6 +7,6 @@ router.post('/Login', AdminController.AdminLogin)
 router.get('/AdminList', AdminController.AdminList)
 router.post('/ForgotPassword', AdminController.forgotPassword)
 router.post('/ResetPassword/:id/:token', AdminController.resetPassword)
-// router.post('/changePassword/:id', AdminController.changePassword)
+router.post('/changePassword/:id', AdminController.changePassword)
 
 module.exports = router
