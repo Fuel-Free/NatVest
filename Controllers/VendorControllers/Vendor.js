@@ -1,35 +1,35 @@
-const AdminSchema = require("../../Models/AdminSchema/adminSchema");
+const VendorSchema = require("../../Models/VendorSchema/VendorSchema");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const mailService = require('../../Midlewares/EmailService')
 
-const adminRegister = async (req, res) => {
+const VendorRegister = async (req, res) => {
   try {
     const { Email, UserName, Password, confirmPassword } = req.body;
-    const adminExistsWithEmail = await AdminSchema.findOne({
+    const vendorExistsWithEmail = await VendorSchema.findOne({
       Email: Email.toLowerCase(),
     });
-    const adminExistsWithName = await AdminSchema.findOne({
+    const vednorExistsWithName = await VendorSchema.findOne({
       UserName: UserName.toLowerCase(),
     });
-    if (adminExistsWithEmail) {
+    if (vendorExistsWithEmail) {
       res.status(409).json({
         success: "Exist",
-        message: "Admin Alredy Exist With Email",
+        message: "Vendor Alredy Exist With Email",
       });
-    } else if (adminExistsWithName) {
+    } else if (vednorExistsWithName) {
       res.status(409).json({
         success: "Exist",
-        message: "Admin Alredy Exist With Name",
+        message: "Vendor Alredy Exist With Name",
       });
     } else {
       if (confirmPassword == Password) {
-        const newAdmin = new AdminSchema(req.body);
+        const newVendor = new VendorSchema(req.body);
         const salt = await bcrypt.genSalt(10);
-        newAdmin.Password = await bcrypt.hashSync(req.body.Password, salt);
-        newAdmin.UserName = UserName.toLowerCase();
-        newAdmin.Email = Email.toLowerCase();
-        const result = await newAdmin.save();
+        newVendor.Password = await bcrypt.hashSync(req.body.Password, salt);
+        newVendor.UserName = UserName.toLowerCase();
+        newVendor.Email = Email.toLowerCase();
+        const result = await newVendor.save();
         res.status(200).json({
           success: "Success",
           message: result,
@@ -48,10 +48,10 @@ const adminRegister = async (req, res) => {
   }
 };
 
-const AdminLogin = async (req, res) => {
+const VendorLogin = async (req, res) => {
   try {
     const { UserName, Password } = req.body;
-    const UserFind = await AdminSchema.findOne({
+    const UserFind = await VendorSchema.findOne({
       UserName: UserName.toLowerCase(),
     });
     if (UserFind) {
@@ -68,11 +68,11 @@ const AdminLogin = async (req, res) => {
           { expiresIn: "1d" }
         );
         UserFind.Token = token;
-       const AdminLogIn =  await UserFind.save();
+       const VendorLogIn =  await UserFind.save();
         res.status(200).json({
           success: "OK",
           token : token,
-          data: AdminLogIn
+          data: VendorLogIn
         });
       }
     } else {
@@ -90,14 +90,14 @@ const AdminLogin = async (req, res) => {
 };
 
 
-const AdminList = async(req, res) => {
+const VendorList = async(req, res) => {
     try {
-        const adminList = await AdminSchema.find().sort({ "createdAt": -1 })
+        const VendorList = await VendorSchema.find().sort({ "createdAt": -1 })
         res.status(200).json({
             success : "success",
-            messate : "Admin List",
-            Count : adminList.length,
-            List : adminList
+            messate : "Vendor List",
+            Count : VendorList.length,
+            List : VendorList
         })
     } catch (error) {
         res.status(409).json({
@@ -110,11 +110,11 @@ const AdminList = async(req, res) => {
 const forgotPassword = async (req, res) => {
     try {
       const { Email } = req.body;
-      const Admin = await AdminSchema.findOne({ Email: Email.toLowerCase() });
-      if (Admin) {
-        const secret = Admin._id + process.env.SECRET_KEY;
-        const token = jwt.sign({ userID: Admin._id }, secret, { expiresIn: "5m" });
-        const link = `http://localhost:1919/admin/reset-password/${Admin._id}/${token}`;
+      const Vendor = await VendorSchema.findOne({ Email: Email.toLowerCase() });
+      if (Vendor) {
+        const secret = Vendor._id + process.env.SECRET_KEY;
+        const token = jwt.sign({ userID: Vendor._id }, secret, { expiresIn: "5m" });
+        const link = `http://localhost:1919/Vendor/reset-password/${Vendor._id}/${token}`;
         await mailService.sendMail(Email,   'Reset Password',
         `Click Here And Change Password ${link}`)
   
@@ -122,13 +122,13 @@ const forgotPassword = async (req, res) => {
           status: "success",
           message: "Password Reset Email sent..plzz /check your email",
           link: link,
-          id : Admin._id,
+          id : Vendor._id,
           token : token
         })
       } else {
         res.status(401).send({
           status: "failed",
-          message: "Admin not found",
+          message: "Vendor not found",
         })
       }
     } catch (error) {
@@ -142,8 +142,8 @@ const forgotPassword = async (req, res) => {
   const resetPassword = async (req, res) => {
     const { Password, confirmPassword } = req.body;
     const { id, token } = req.params;
-    const Admin = await AdminSchema.findById(id);
-    const new_secret = Admin._id + process.env.SECRET_KEY;
+    const Vendor = await VendorSchema.findById(id);
+    const new_secret = Vendor._id + process.env.SECRET_KEY;
     try {
       jwt.verify(token, new_secret);
       if ((Password, confirmPassword)) {
@@ -155,7 +155,7 @@ const forgotPassword = async (req, res) => {
         } else {
           const salt = await bcrypt.genSalt(10);
           const new_Password = await bcrypt.hash(Password, salt);
-          const createPassword = await AdminSchema.findByIdAndUpdate(Admin.id, {
+          const createPassword = await VendorSchema.findByIdAndUpdate(Vendor.id, {
             $set: { Password: new_Password },
           })
           res.status(200).json({
@@ -183,9 +183,9 @@ const forgotPassword = async (req, res) => {
   const changePassword = async (req, res) => {
     const { oldPassword, newPassword, confirmPassword } = req.body;
     const { id } = req.params;
-    const Admin = await AdminSchema.findById(id);
+    const Vendor = await VendorSchema.findById(id);
     try {
-      const isMatch = await bcrypt.compare(oldPassword, Admin.Password);
+      const isMatch = await bcrypt.compare(oldPassword, Vendor.Password);
       if (isMatch) {
         if(oldPassword !== newPassword) {
           if (newPassword !== confirmPassword) {
@@ -196,7 +196,7 @@ const forgotPassword = async (req, res) => {
           } else {
             const salt = await bcrypt.genSalt(10);
             const new_Password = await bcrypt.hash(newPassword, salt);
-            const createPassword = await AdminSchema.findByIdAndUpdate(Admin.id, {
+            const createPassword = await VendorSchema.findByIdAndUpdate(Vendor.id, {
               $set: { Password: new_Password },
             })
             res.status(200).json({
@@ -225,4 +225,29 @@ const forgotPassword = async (req, res) => {
   }
 
   
-module.exports = { adminRegister , AdminLogin , forgotPassword , resetPassword , changePassword , AdminList };
+  const ProfileUpdate = async (req, res) => {
+    try {
+      
+        const ProfileUpdates = await VendorSchema.findByIdAndUpdate(
+          req.params.id,
+          req.body,
+          {
+            new: true,
+            runValidators: true,
+          }
+        );
+        await ProfileUpdates.save();
+      res.status(200).json({
+        success: "success",
+        message: "Profile Successful",
+        Update: ProfileUpdates,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: "error",
+        error: error.message,
+      });
+    }
+  };
+
+module.exports = { VendorRegister , VendorLogin , forgotPassword , resetPassword , changePassword , VendorList , ProfileUpdate };
